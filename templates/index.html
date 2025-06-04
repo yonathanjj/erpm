@@ -1,0 +1,1201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Construction ERP</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .card-shadow {
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+        .hover-scale {
+            transition: transform 0.2s;
+        }
+        .hover-scale:hover {
+            transform: scale(1.02);
+        }
+        .sidebar-item {
+            transition: all 0.3s ease;
+        }
+        .sidebar-item:hover {
+            background: rgba(255,255,255,0.1);
+            transform: translateX(5px);
+        }
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .status-active { background: #10B981; color: white; }
+        .status-pending { background: #F59E0B; color: white; }
+        .status-low { background: #EF4444; color: white; }
+        .section { display: none; }
+        .section.active { display: block; }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <!-- Navigation -->
+    <nav class="gradient-bg text-white p-4 shadow-lg">
+        <div class="container mx-auto flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <i class="fas fa-building text-2xl"></i>
+                <h1 class="text-xl font-bold">Construction ERP</h1>
+            </div>
+            <div class="flex items-center space-x-4">
+                <div class="flex items-center space-x-2">
+                    <i class="fas fa-user-circle text-lg"></i>
+                    <span id="usernameDisplay"></span>
+                    <span id="userRole" class="text-sm bg-white text-purple-600 px-2 py-1 rounded-full"></span>
+                </div>
+                <button onclick="logout()" class="bg-red-600 hover:bg-red-700 px-3 py-1 rounded">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="flex">
+        <!-- Sidebar -->
+        <div class="gradient-bg text-white w-64 min-h-screen p-4">
+            <div class="mb-8">
+                <h3 class="text-lg font-semibold mb-4">Navigation</h3>
+                <ul class="space-y-2">
+                    <li><a href="#" onclick="showSection('dashboard')" class="sidebar-item flex items-center p-3 rounded cursor-pointer">
+                        <i class="fas fa-chart-pie mr-3"></i>Dashboard
+                    </a></li>
+                    <li><a href="#" onclick="showSection('warehouse')" class="sidebar-item flex items-center p-3 rounded cursor-pointer">
+                        <i class="fas fa-warehouse mr-3"></i>Warehouse
+                    </a></li>
+                    <li><a href="#" onclick="showSection('showroom')" class="sidebar-item flex items-center p-3 rounded cursor-pointer">
+                        <i class="fas fa-store mr-3"></i>Showroom
+                    </a></li>
+                    <li><a href="#" onclick="showSection('products')" class="sidebar-item flex items-center p-3 rounded cursor-pointer">
+                        <i class="fas fa-boxes mr-3"></i>Products
+                    </a></li>
+                    <li><a href="#" onclick="showSection('transfers')" class="sidebar-item flex items-center p-3 rounded cursor-pointer">
+                        <i class="fas fa-exchange-alt mr-3"></i>Transfers
+                    </a></li>
+                    <li><a href="#" onclick="showSection('reports')" class="sidebar-item flex items-center p-3 rounded cursor-pointer">
+                        <i class="fas fa-chart-bar mr-3"></i>Reports
+                    </a></li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="flex-1 p-6">
+            <!-- Dashboard Section -->
+            <div id="dashboard" class="section active">
+                <!-- Content loaded dynamically -->
+            </div>
+
+            <!-- Warehouse Section -->
+            <div id="warehouse" class="section">
+                <!-- Content loaded dynamically -->
+            </div>
+
+            <!-- Showroom Section -->
+            <div id="showroom" class="section">
+                <!-- Content loaded dynamically -->
+            </div>
+
+            <!-- Products Section -->
+            <div id="products" class="section">
+                <!-- Content loaded dynamically -->
+            </div>
+
+            <!-- Transfers Section -->
+            <div id="transfers" class="section">
+                <!-- Content loaded dynamically -->
+            </div>
+
+            <!-- Reports Section -->
+            <div id="reports" class="section">
+                <!-- Content loaded dynamically -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <div id="addProductModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden">
+        <div class="bg-white rounded-lg p-6 w-full max-w-md">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold">Add New Product</h3>
+                <button onclick="closeModal('addProductModal')" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form id="addProductForm">
+                <input type="hidden" id="productLocation">
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2">Product Name</label>
+                    <input type="text" id="productName" class="w-full px-3 py-2 border rounded-lg" required>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2">Brand</label>
+                    <input type="text" id="productBrand" class="w-full px-3 py-2 border rounded-lg" required>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2">Category</label>
+                    <input type="text" id="productCategory" class="w-full px-3 py-2 border rounded-lg" required>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2">Initial Quantity</label>
+                    <input type="number" id="productQuantity" class="w-full px-3 py-2 border rounded-lg" min="1" required>
+                </div>
+                <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700">
+                    Add Product
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div id="sellProductModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden">
+        <div class="bg-white rounded-lg p-6 w-full max-w-md">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold">Sell Product</h3>
+                <button onclick="closeModal('sellProductModal')" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form id="sellProductForm">
+                <input type="hidden" id="sellProductId">
+                <input type="hidden" id="sellProductLocation">
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2">Product</label>
+                    <input type="text" id="sellProductName" class="w-full px-3 py-2 border rounded-lg bg-gray-100" readonly>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2">Available Stock</label>
+                    <input type="text" id="sellProductStock" class="w-full px-3 py-2 border rounded-lg bg-gray-100" readonly>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2">Quantity</label>
+                    <input type="number" id="sellProductQuantity" class="w-full px-3 py-2 border rounded-lg" min="1" required>
+                </div>
+                <button type="submit" class="w-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700">
+                    Record Sale
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div id="transferProductModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden">
+        <div class="bg-white rounded-lg p-6 w-full max-w-md">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold">Transfer Product</h3>
+                <button onclick="closeModal('transferProductModal')" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form id="transferProductForm">
+                <input type="hidden" id="transferProductId">
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2">Product</label>
+                    <input type="text" id="transferProductName" class="w-full px-3 py-2 border rounded-lg bg-gray-100" readonly>
+                </div>
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label class="block text-gray-700 text-sm font-bold mb-2">From</label>
+                        <select id="transferFrom" class="w-full px-3 py-2 border rounded-lg" onchange="updateTransferToOptions()">
+                            <option value="warehouse">Warehouse</option>
+                            <option value="showroom">Showroom</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 text-sm font-bold mb-2">To</label>
+                        <select id="transferTo" class="w-full px-3 py-2 border rounded-lg">
+                            <option value="showroom">Showroom</option>
+                            <option value="warehouse">Warehouse</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2">Available Stock</label>
+                    <input type="text" id="transferProductStock" class="w-full px-3 py-2 border rounded-lg bg-gray-100" readonly>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2">Quantity</label>
+                    <input type="number" id="transferProductQuantity" class="w-full px-3 py-2 border rounded-lg" min="1" required>
+                </div>
+                <button type="submit" class="w-full bg-purple-600 text-white py-2 rounded-lg hover:bg-purple-700">
+                    Transfer Product
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let currentUser = null;
+        let dashboardData = {};
+        let products = [];
+        let transfers = [];
+
+        // Initialize the application when DOM is loaded
+        document.addEventListener('DOMContentLoaded', async () => {
+            await checkAuth();
+            showSection('dashboard');
+        });
+
+        // Check authentication status
+        async function checkAuth() {
+            try {
+                const response = await fetch('/api/dashboard-stats', {
+                    credentials: 'same-origin'
+                });
+
+                if (response.status === 401) {
+                    window.location.href = '/';
+                    return;
+                }
+
+                const data = await response.json();
+                dashboardData = data;
+
+                // Get user info from session
+                const userResponse = await fetch('/api/dashboard-stats', {
+                    credentials: 'same-origin'
+                });
+
+                if (userResponse.ok) {
+                    document.getElementById('usernameDisplay').textContent = 'Welcome';
+                    document.getElementById('userRole').textContent = 'Admin';
+                }
+
+                loadInitialData();
+            } catch (error) {
+                console.error('Authentication check failed:', error);
+                window.location.href = '/';
+            }
+        }
+
+        // Load initial data
+        async function loadInitialData() {
+            await loadDashboard();
+            await loadProducts();
+            await loadTransfers();
+        }
+
+        // Load dashboard data
+        async function loadDashboard() {
+            try {
+                const response = await fetch('/api/dashboard-stats', {
+                    credentials: 'same-origin'
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to load dashboard data');
+                }
+
+                dashboardData = await response.json();
+                renderDashboard();
+            } catch (error) {
+                console.error('Error loading dashboard:', error);
+                alert('Failed to load dashboard data');
+            }
+        }
+
+        // Load products data
+        async function loadProducts() {
+            try {
+                const response = await fetch('/api/products', {
+                    credentials: 'same-origin'
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to load products');
+                }
+
+                products = await response.json();
+            } catch (error) {
+                console.error('Error loading products:', error);
+                alert('Failed to load products');
+            }
+        }
+
+        // Load transfers data
+        async function loadTransfers() {
+            try {
+                const response = await fetch('/api/transfers', {
+                    credentials: 'same-origin'
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to load transfers');
+                }
+
+                transfers = await response.json();
+            } catch (error) {
+                console.error('Error loading transfers:', error);
+                alert('Failed to load transfers');
+            }
+        }
+
+        // Show a specific section
+        function showSection(sectionId) {
+            // Hide all sections
+            document.querySelectorAll('.section').forEach(section => {
+                section.classList.remove('active');
+            });
+
+            // Show selected section
+            document.getElementById(sectionId).classList.add('active');
+
+            // Load section data
+            switch(sectionId) {
+                case 'dashboard':
+                    renderDashboard();
+                    break;
+                case 'warehouse':
+                    renderWarehouse();
+                    break;
+                case 'showroom':
+                    renderShowroom();
+                    break;
+                case 'products':
+                    renderProducts();
+                    break;
+                case 'transfers':
+                    renderTransfers();
+                    break;
+                case 'reports':
+                    renderReports();
+                    break;
+            }
+        }
+
+        // Render dashboard
+        function renderDashboard() {
+            const dashboardSection = document.getElementById('dashboard');
+
+            if (!dashboardData) {
+                dashboardSection.innerHTML = '<p>Loading dashboard data...</p>';
+                return;
+            }
+
+            dashboardSection.innerHTML = `
+                <div class="mb-6">
+                    <h2 class="text-3xl font-bold text-gray-800 mb-2">Dashboard Overview</h2>
+                    <p class="text-gray-600">Welcome back! Here's your business at a glance.</p>
+                </div>
+
+                <!-- Stats Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    <div class="bg-white p-6 rounded-lg card-shadow hover-scale">
+                        <div class="flex items-center">
+                            <div class="p-3 rounded-full bg-blue-100 text-blue-600">
+                                <i class="fas fa-warehouse text-xl"></i>
+                            </div>
+                            <div class="ml-4">
+                                <p class="text-gray-600 text-sm">Warehouse Stock</p>
+                                <p class="text-2xl font-bold text-gray-800">${dashboardData.warehouse_stock}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-white p-6 rounded-lg card-shadow hover-scale">
+                        <div class="flex items-center">
+                            <div class="p-3 rounded-full bg-green-100 text-green-600">
+                                <i class="fas fa-store text-xl"></i>
+                            </div>
+                            <div class="ml-4">
+                                <p class="text-gray-600 text-sm">Showroom Stock</p>
+                                <p class="text-2xl font-bold text-gray-800">${dashboardData.showroom_stock}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-white p-6 rounded-lg card-shadow hover-scale">
+                        <div class="flex items-center">
+                            <div class="p-3 rounded-full bg-purple-100 text-purple-600">
+                                <i class="fas fa-truck text-xl"></i>
+                            </div>
+                            <div class="ml-4">
+                                <p class="text-gray-600 text-sm">Monthly Transfers</p>
+                                <p class="text-2xl font-bold text-gray-800">${dashboardData.monthly_imports}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-white p-6 rounded-lg card-shadow hover-scale">
+                        <div class="flex items-center">
+                            <div class="p-3 rounded-full bg-orange-100 text-orange-600">
+                                <i class="fas fa-chart-line text-xl"></i>
+                            </div>
+                            <div class="ml-4">
+                                <p class="text-gray-600 text-sm">Monthly Sales</p>
+                                <p class="text-2xl font-bold text-gray-800">${dashboardData.total_sales}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charts Row -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                    <div class="bg-white p-6 rounded-lg card-shadow">
+                        <h3 class="text-lg font-semibold mb-4">Sales Distribution</h3>
+                        <canvas id="salesChart"></canvas>
+                    </div>
+                    <div class="bg-white p-6 rounded-lg card-shadow">
+                        <h3 class="text-lg font-semibold mb-4">Brand Performance</h3>
+                        <canvas id="brandChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Recent Transfers -->
+                <div class="bg-white rounded-lg card-shadow">
+                    <div class="p-6 border-b">
+                        <h3 class="text-lg font-semibold">Recent Transfers</h3>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Product</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">From</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">To</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Qty</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-200">
+                                ${dashboardData.recent_transfers.map(transfer => `
+                                    <tr>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${transfer.transfer_date}</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${transfer.product_name}</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 capitalize">${transfer.from_location}</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 capitalize">${transfer.to_location}</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${transfer.quantity}</td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <span class="status-badge ${transfer.status === 'completed' ? 'status-active' : 'status-pending'}">
+                                                ${transfer.status}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+
+            // Initialize charts
+            createSalesChart();
+            createBrandChart();
+        }
+
+        // Render warehouse section
+        function renderWarehouse() {
+            const warehouseSection = document.getElementById('warehouse');
+            const warehouseProducts = products.filter(p => p.warehouse_stock > 0);
+
+            warehouseSection.innerHTML = `
+                <div class="mb-6 flex justify-between items-center">
+                    <div>
+                        <h2 class="text-3xl font-bold text-gray-800 mb-2">Warehouse Inventory</h2>
+                        <p class="text-gray-600">Manage products in your warehouse</p>
+                    </div>
+                    <button onclick="showAddProductModal('warehouse')" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">
+                        <i class="fas fa-plus mr-2"></i> Add Product
+                    </button>
+                </div>
+
+                <div class="bg-white rounded-lg card-shadow overflow-hidden">
+                    <div class="p-6 border-b">
+                        <div class="flex justify-between items-center">
+                            <h3 class="text-lg font-semibold">Products in Warehouse</h3>
+                            <div class="relative">
+                                <input type="text" placeholder="Search products..." class="pl-10 pr-4 py-2 border rounded-lg" id="warehouseSearch">
+                                <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Product</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Brand</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Category</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Stock</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-200">
+                                ${warehouseProducts.map(product => {
+                                    const status = product.warehouse_stock < 10 ? 'Low' :
+                                                  product.warehouse_stock < 50 ? 'Medium' : 'Good';
+                                    const statusClass = product.warehouse_stock < 10 ? 'status-low' :
+                                                      product.warehouse_stock < 50 ? 'status-pending' : 'status-active';
+
+                                    return `
+                                        <tr>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <div class="font-medium text-gray-900">${product.name}</div>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${product.brand}</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 capitalize">${product.category}</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${product.warehouse_stock}</td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <span class="status-badge ${statusClass}">${status}</span>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                                <button onclick="showSellProductModal(${product.id}, 'warehouse')" class="text-green-600 hover:text-green-900 mr-3">
+                                                    <i class="fas fa-cash-register"></i> Sell
+                                                </button>
+                                                <button onclick="showTransferProductModal(${product.id})" class="text-purple-600 hover:text-purple-900">
+                                                    <i class="fas fa-exchange-alt"></i> Transfer
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    `;
+                                }).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Render showroom section
+        function renderShowroom() {
+            const showroomSection = document.getElementById('showroom');
+            const showroomProducts = products.filter(p => p.showroom_stock > 0);
+
+            showroomSection.innerHTML = `
+                <div class="mb-6 flex justify-between items-center">
+                    <div>
+                        <h2 class="text-3xl font-bold text-gray-800 mb-2">Showroom Inventory</h2>
+                        <p class="text-gray-600">Manage products in your showroom</p>
+                    </div>
+                    <button onclick="showAddProductModal('showroom')" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">
+                        <i class="fas fa-plus mr-2"></i> Add Product
+                    </button>
+                </div>
+
+                <div class="bg-white rounded-lg card-shadow overflow-hidden">
+                    <div class="p-6 border-b">
+                        <div class="flex justify-between items-center">
+                            <h3 class="text-lg font-semibold">Products in Showroom</h3>
+                            <div class="relative">
+                                <input type="text" placeholder="Search products..." class="pl-10 pr-4 py-2 border rounded-lg" id="showroomSearch">
+                                <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Product</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Brand</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Category</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Stock</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-200">
+                                ${showroomProducts.map(product => {
+                                    const status = product.showroom_stock < 5 ? 'Low' :
+                                                  product.showroom_stock < 15 ? 'Medium' : 'Good';
+                                    const statusClass = product.showroom_stock < 5 ? 'status-low' :
+                                                      product.showroom_stock < 15 ? 'status-pending' : 'status-active';
+
+                                    return `
+                                        <tr>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <div class="font-medium text-gray-900">${product.name}</div>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${product.brand}</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 capitalize">${product.category}</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${product.showroom_stock}</td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <span class="status-badge ${statusClass}">${status}</span>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                                <button onclick="showSellProductModal(${product.id}, 'showroom')" class="text-green-600 hover:text-green-900 mr-3">
+                                                    <i class="fas fa-cash-register"></i> Sell
+                                                </button>
+                                                <button onclick="showTransferProductModal(${product.id})" class="text-purple-600 hover:text-purple-900">
+                                                    <i class="fas fa-exchange-alt"></i> Transfer
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    `;
+                                }).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Render products section
+        function renderProducts() {
+            const productsSection = document.getElementById('products');
+
+            productsSection.innerHTML = `
+                <div class="mb-6">
+                    <h2 class="text-3xl font-bold text-gray-800 mb-2">All Products</h2>
+                    <p class="text-gray-600">View and manage all products in your inventory</p>
+                </div>
+
+                <div class="bg-white rounded-lg card-shadow overflow-hidden">
+                    <div class="p-6 border-b">
+                        <div class="flex justify-between items-center">
+                            <h3 class="text-lg font-semibold">Product Inventory</h3>
+                            <div class="flex space-x-3">
+                                <div class="relative">
+                                    <input type="text" placeholder="Search products..." class="pl-10 pr-4 py-2 border rounded-lg" id="productsSearch">
+                                    <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+                                </div>
+                                <button onclick="showAddProductModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">
+                                    <i class="fas fa-plus mr-2"></i> Add Product
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Product</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Brand</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Category</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Warehouse</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Showroom</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Total</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-200">
+                                ${products.map(product => {
+                                    const totalStock = product.warehouse_stock + product.showroom_stock;
+                                    const status = totalStock < 10 ? 'Low' :
+                                                  totalStock < 50 ? 'Medium' : 'Good';
+                                    const statusClass = totalStock < 10 ? 'status-low' :
+                                                      totalStock < 50 ? 'status-pending' : 'status-active';
+
+                                    return `
+                                        <tr>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <div class="font-medium text-gray-900">${product.name}</div>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${product.brand}</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 capitalize">${product.category}</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${product.warehouse_stock}</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${product.showroom_stock}</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-bold">${totalStock}</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                                <button onclick="showTransferProductModal(${product.id})" class="text-purple-600 hover:text-purple-900 mr-3">
+                                                    <i class="fas fa-exchange-alt"></i> Transfer
+                                                </button>
+                                                <button onclick="editProduct(${product.id})" class="text-blue-600 hover:text-blue-900">
+                                                    <i class="fas fa-edit"></i> Edit
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    `;
+                                }).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Render transfers section
+        function renderTransfers() {
+            const transfersSection = document.getElementById('transfers');
+
+            transfersSection.innerHTML = `
+                <div class="mb-6">
+                    <h2 class="text-3xl font-bold text-gray-800 mb-2">Product Transfers</h2>
+                    <p class="text-gray-600">View and manage all product transfers between locations</p>
+                </div>
+
+                <div class="bg-white rounded-lg card-shadow overflow-hidden">
+                    <div class="p-6 border-b">
+                        <div class="flex justify-between items-center">
+                            <h3 class="text-lg font-semibold">Transfer History</h3>
+                            <div class="relative">
+                                <input type="text" placeholder="Search transfers..." class="pl-10 pr-4 py-2 border rounded-lg" id="transfersSearch">
+                                <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Product</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">From</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">To</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Qty</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">By</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-200">
+                                ${transfers.map(transfer => {
+                                    return `
+                                        <tr>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${transfer.transfer_date}</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${transfer.product_name} (${transfer.brand})</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 capitalize">${transfer.from_location}</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 capitalize">${transfer.to_location}</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${transfer.quantity}</td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <span class="status-badge ${transfer.status === 'completed' ? 'status-active' : 'status-pending'}">
+                                                    ${transfer.status}
+                                                </span>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${transfer.created_by}</td>
+                                        </tr>
+                                    `;
+                                }).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Render reports section
+        function renderReports() {
+            const reportsSection = document.getElementById('reports');
+
+            reportsSection.innerHTML = `
+                <div class="mb-6">
+                    <h2 class="text-3xl font-bold text-gray-800 mb-2">Business Reports</h2>
+                    <p class="text-gray-600">Analytics and insights for your construction business</p>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                    <div class="bg-white p-6 rounded-lg card-shadow">
+                        <h3 class="text-lg font-semibold mb-4">Sales Distribution</h3>
+                        <canvas id="reportSalesChart"></canvas>
+                    </div>
+                    <div class="bg-white p-6 rounded-lg card-shadow">
+                        <h3 class="text-lg font-semibold mb-4">Brand Performance</h3>
+                        <canvas id="reportBrandChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 rounded-lg card-shadow mb-8">
+                    <h3 class="text-lg font-semibold mb-4">Inventory Movement (Last 30 Days)</h3>
+                    <canvas id="inventoryMovementChart"></canvas>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="bg-white p-6 rounded-lg card-shadow">
+                        <div class="flex items-center justify-between mb-4">
+                            <h4 class="font-semibold">Top Selling Products</h4>
+                            <span class="text-sm text-gray-500">Last 30 Days</span>
+                        </div>
+                        <div class="space-y-4">
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm font-medium">Concrete Waterproofing</span>
+                                <span class="text-sm font-bold">45 sales</span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm font-medium">Tile Adhesive</span>
+                                <span class="text-sm font-bold">38 sales</span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm font-medium">Wall Putty</span>
+                                <span class="text-sm font-bold">32 sales</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-white p-6 rounded-lg card-shadow">
+                        <div class="flex items-center justify-between mb-4">
+                            <h4 class="font-semibold">Low Stock Items</h4>
+                            <span class="text-sm text-gray-500">Need Reorder</span>
+                        </div>
+                        <div class="space-y-4">
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm font-medium">Crack Filler</span>
+                                <span class="text-sm font-bold text-red-600">8 left</span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm font-medium">Floor Cleaner</span>
+                                <span class="text-sm font-bold text-red-600">12 left</span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm font-medium">Sealant</span>
+                                <span class="text-sm font-bold text-yellow-600">22 left</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-white p-6 rounded-lg card-shadow">
+                        <div class="flex items-center justify-between mb-4">
+                            <h4 class="font-semibold">Recent Activities</h4>
+                            <span class="text-sm text-gray-500">Today</span>
+                        </div>
+                        <div class="space-y-4">
+                            <div class="flex items-start">
+                                <div class="bg-blue-100 p-2 rounded-full mr-3">
+                                    <i class="fas fa-exchange-alt text-blue-600 text-sm"></i>
+                                </div>
+                                <div>
+                                    <p class="text-sm font-medium">15 units of Tile Adhesive transferred to showroom</p>
+                                    <p class="text-xs text-gray-500">10:45 AM</p>
+                                </div>
+                            </div>
+                            <div class="flex items-start">
+                                <div class="bg-green-100 p-2 rounded-full mr-3">
+                                    <i class="fas fa-cash-register text-green-600 text-sm"></i>
+                                </div>
+                                <div>
+                                    <p class="text-sm font-medium">5 units of Wall Putty sold from showroom</p>
+                                    <p class="text-xs text-gray-500">09:30 AM</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // Initialize report charts
+            createReportSalesChart();
+            createReportBrandChart();
+            createInventoryMovementChart();
+        }
+
+        // Modal functions
+        function showAddProductModal(location = 'warehouse') {
+            document.getElementById('productLocation').value = location;
+            document.getElementById('addProductModal').classList.remove('hidden');
+        }
+
+        function showSellProductModal(productId, location) {
+            const product = products.find(p => p.id === productId);
+            if (!product) return;
+
+            document.getElementById('sellProductId').value = productId;
+            document.getElementById('sellProductLocation').value = location;
+            document.getElementById('sellProductName').value = product.name;
+            document.getElementById('sellProductStock').value = location === 'warehouse' ? product.warehouse_stock : product.showroom_stock;
+            document.getElementById('sellProductQuantity').max = location === 'warehouse' ? product.warehouse_stock : product.showroom_stock;
+            document.getElementById('sellProductQuantity').value = '';
+
+            document.getElementById('sellProductModal').classList.remove('hidden');
+        }
+
+        function showTransferProductModal(productId) {
+            const product = products.find(p => p.id === productId);
+            if (!product) return;
+
+            document.getElementById('transferProductId').value = productId;
+            document.getElementById('transferProductName').value = product.name;
+            document.getElementById('transferFrom').value = 'warehouse';
+            document.getElementById('transferTo').value = 'showroom';
+            updateTransferToOptions();
+
+            document.getElementById('transferProductModal').classList.remove('hidden');
+        }
+
+        function updateTransferToOptions() {
+            const fromLocation = document.getElementById('transferFrom').value;
+            const toSelect = document.getElementById('transferTo');
+
+            toSelect.innerHTML = '';
+            if (fromLocation === 'warehouse') {
+                toSelect.innerHTML = '<option value="showroom">Showroom</option>';
+            } else {
+                toSelect.innerHTML = '<option value="warehouse">Warehouse</option>';
+            }
+
+            // Update available stock display
+            const productId = document.getElementById('transferProductId').value;
+            const product = products.find(p => p.id === parseInt(productId));
+            if (product) {
+                const stock = fromLocation === 'warehouse' ? product.warehouse_stock : product.showroom_stock;
+                document.getElementById('transferProductStock').value = stock;
+                document.getElementById('transferProductQuantity').max = stock;
+                document.getElementById('transferProductQuantity').value = '';
+            }
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.add('hidden');
+        }
+
+        // Form handlers
+        document.getElementById('addProductForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const name = document.getElementById('productName').value;
+            const brand = document.getElementById('productBrand').value;
+            const category = document.getElementById('productCategory').value;
+            const quantity = parseInt(document.getElementById('productQuantity').value);
+            const location = document.getElementById('productLocation').value;
+
+            try {
+                const response = await fetch('/api/products', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        name,
+                        brand,
+                        category,
+                        quantity,
+                        location
+                    }),
+                    credentials: 'same-origin'
+                });
+
+                if (response.ok) {
+                    await loadProducts();
+                    await loadDashboard();
+                    closeModal('addProductModal');
+                    showSection('products');
+                    alert('Product added successfully!');
+                } else {
+                    const error = await response.json();
+                    alert(error.error || 'Failed to add product');
+                }
+            } catch (error) {
+                console.error('Error adding product:', error);
+                alert('Failed to add product');
+            }
+        });
+
+        document.getElementById('sellProductForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const productId = document.getElementById('sellProductId').value;
+            const quantity = parseInt(document.getElementById('sellProductQuantity').value);
+            const location = document.getElementById('sellProductLocation').value;
+
+            try {
+                const response = await fetch(`/api/products/${productId}/sell`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        quantity,
+                        location
+                    }),
+                    credentials: 'same-origin'
+                });
+
+                if (response.ok) {
+                    await loadProducts();
+                    await loadDashboard();
+                    closeModal('sellProductModal');
+                    showSection(location === 'warehouse' ? 'warehouse' : 'showroom');
+                    alert('Sale recorded successfully!');
+                } else {
+                    const error = await response.json();
+                    alert(error.error || 'Failed to record sale');
+                }
+            } catch (error) {
+                console.error('Error recording sale:', error);
+                alert('Failed to record sale');
+            }
+        });
+
+        document.getElementById('transferProductForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const productId = document.getElementById('transferProductId').value;
+            const quantity = parseInt(document.getElementById('transferProductQuantity').value);
+            const fromLocation = document.getElementById('transferFrom').value;
+            const toLocation = document.getElementById('transferTo').value;
+
+            try {
+                const response = await fetch('/api/transfers', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        product_id: productId,
+                        quantity,
+                        from_location: fromLocation,
+                        to_location: toLocation
+                    }),
+                    credentials: 'same-origin'
+                });
+
+                if (response.ok) {
+                    await loadProducts();
+                    await loadTransfers();
+                    await loadDashboard();
+                    closeModal('transferProductModal');
+                    showSection('transfers');
+                    alert('Transfer completed successfully!');
+                } else {
+                    const error = await response.json();
+                    alert(error.error || 'Failed to complete transfer');
+                }
+            } catch (error) {
+                console.error('Error transferring product:', error);
+                alert('Failed to complete transfer');
+            }
+        });
+
+        // Chart functions
+        function createSalesChart() {
+            const ctx = document.getElementById('salesChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Warehouse Sales', 'Showroom Sales'],
+                    datasets: [{
+                        data: [65, 35],
+                        backgroundColor: ['#3B82F6', '#10B981'],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+        }
+
+        function createBrandChart() {
+            const ctx = document.getElementById('brandChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Dr.Fixit', 'Pidilite', 'Asian Paints', 'Berger'],
+                    datasets: [{
+                        label: 'Stock by Brand',
+                        data: [340, 420, 530, 380],
+                        backgroundColor: ['#8B5CF6', '#EC4899', '#3B82F6', '#10B981'],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        function createReportSalesChart() {
+            const ctx = document.getElementById('reportSalesChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: ['Warehouse Sales', 'Showroom Sales'],
+                    datasets: [{
+                        data: [dashboardData.warehouse_stock || 0, dashboardData.showroom_stock || 0],
+                        backgroundColor: ['#3B82F6', '#10B981'],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+        }
+
+        function createReportBrandChart() {
+            const ctx = document.getElementById('reportBrandChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Dr.Fixit', 'Pidilite', 'Asian Paints', 'Berger'],
+                    datasets: [{
+                        label: 'Stock by Brand',
+                        data: [340, 420, 530, 380],
+                        backgroundColor: ['#8B5CF6', '#EC4899', '#3B82F6', '#10B981'],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        function createInventoryMovementChart() {
+            const ctx = document.getElementById('inventoryMovementChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                    datasets: [
+                        {
+                            label: 'Transfers',
+                            data: [12, 19, 15, 22, 18, 25],
+                            borderColor: '#8B5CF6',
+                            backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                            fill: true,
+                            tension: 0.3
+                        },
+                        {
+                            label: 'Sales',
+                            data: [8, 15, 12, 18, 20, 15],
+                            borderColor: '#10B981',
+                            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                            fill: true,
+                            tension: 0.3
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        // Logout function
+        async function logout() {
+            try {
+                const response = await fetch('/api/logout', {
+                    method: 'POST',
+                    credentials: 'same-origin'
+                });
+
+                if (response.ok) {
+                    window.location.href = '/';
+                }
+            } catch (error) {
+                console.error('Logout error:', error);
+                window.location.href = '/';
+            }
+        }
+    </script>
+</body>
+</html>
